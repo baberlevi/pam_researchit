@@ -1,14 +1,16 @@
 FROM fedora:latest 
 
 # install git and some build dependencies
-RUN dnf -y install git pam-devel gcc kernel-devel
+RUN dnf -y install git pam-devel gcc kernel-devel gnupg
 
 # need zfs source for includes & libs
-RUN git clone https://github.com/zfsonlinux/zfs.git
+RUN dnf -y install http://download.zfsonlinux.org/fedora/zfs-release$(rpm -E %dist).noarch.rpm
+RUN gpg --quiet --with-fingerprint /etc/pki/rpm-gpg/RPM-GPG-KEY-zfsonlinux
+RUN dnf -y install zfs
 
 # the project to build
 RUN git clone https://github.com/snehring/pam_researchit.git	
 
 WORKDIR pam_researchit
-RUN gcc -shared -fPIC -lpam -l/zfs/lib -I/zfs/include/spl -I/zfs/include -std=c18 pam_researchit.c -o pam_researchit
+RUN gcc -shared -fPIC -lpam -I/usr/src/zfs-0.7.12/include -I/usr/src/zfs-0.7.12/lib/libspl/include pam_researchit.c /usr/lib64/libzfs_core.so.1.0.0 -o pam_researchit
 
